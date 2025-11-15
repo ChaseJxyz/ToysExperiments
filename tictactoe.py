@@ -2,7 +2,7 @@
 # 11/9/25 edition: 165 lines (w/comments). Prep work for different sized grids (using vars for functions instead of hardcoded values), user-chosen symbols, create/reset grid progrmatically, general clean up
 # TODO: SILLY EDITION: ai type/difficulty picker, make different sizes of grids (this will need to update the layout, as well as AI + x move dict + intro info)
 # TODO: PRETTIFY: make lines between cells? + highlight/color the winning/losing ones, prolly get rid of all the globals
-# TODO: BASIC FUNCTIONALITY: actual ai that isn't random, clean up w/win/loss functions, probably not have a main func
+# TODO: BASIC FUNCTIONALITY: actual ai that isn't random, clean up w/win/loss functions, probably not have a main func, find check for all of row being same for win condition, write formula for diagnol, replace dicts with ord/chr for ascii, change .lower to .upper (for ascii), change win checker to only be for things that include the newest one.
 
 import random
 

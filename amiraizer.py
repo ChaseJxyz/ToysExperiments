@@ -62,9 +62,10 @@ while i < len(array):
     else:
         i+=1
 
-
 output = "".join(array)
 print(f"Output is: {output}")
 
 with open(file_name,"a") as out_file:
     out_file.write(output)
+
+file.close()

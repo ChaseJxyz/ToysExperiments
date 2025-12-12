@@ -2,12 +2,16 @@ import re
 import urllib.request
 import datetime
 
+# separates each instance script ran
+separator = "-" * 30
+
 # opens file with 1 moksha url per line + converts into
 # array
 f = open("moksha_URLS")
 raw_urls = f.read()
 f.close()
 url_array = raw_urls.split()
+
 
 # regex for finding market name + queue position + sub status
 queue_pattern = r"(?<=QueuePosition<\/th><td>)\d+"
@@ -45,17 +49,54 @@ def despacer(name):
     return re.sub(r"(?<=\w)([A-Z])", r" \1", name)
 
 
-# opens/creates output file for results w/timestamp (appends, so you can
-# see how little you moved from the last time you checked!)
+# read all old entries and turn into array
+o = open(file="moksha_output", mode="r")
+previous_entries = o.readlines()
+o.close()
+
+# finds last instance script ran + saves results into list
+last_checked_index = 0
+last_checked_markets = []
+
+for index, element in reversed(list(enumerate(previous_entries))):
+    if element[0:3] == "---":
+        last_checked_index = index + 1
+        break
+
+for element in range(last_checked_index, len(previous_entries)):
+    temp = previous_entries[element]
+    temp = temp.strip("\n")
+    temp = re.split(r'[" "]{2,}', temp)
+    if temp[1][1] in [0 - 9]:
+        temp[1] = int(temp[1])
+    last_checked_markets.append(temp)
+
+
+# converts list into dict cause i couldnt get it to work otherwise
+prev_dict = {}
+
+x = 0
+for x in range(0, len(last_checked_markets)):
+    prev_dict[last_checked_markets[x][0]] = last_checked_markets[x][1]
+
+
+# opens/creates output file for results w/timestamp
+# im now realizing all that above code will not work if this doesnt
+# already exist. that is something to fix another day
 o = open(file="moksha_output", mode="a+")
-o.write(f"{datetime.datetime.now()}\n{'-' * 25}\n")
+o.write(f"{datetime.datetime.now()}\n{separator}\n")
+
 
 # inits for the core loop
 i = 0
+x = 0
 market = ""
 sub_status = ""
+difference = 0
 
 for i in range(len(url_array)):
+    difference = 0
+    x = 0
     # opens/closes URL and saves as string
     fp = urllib.request.urlopen(url_array[i])
     my_bytes = fp.read()
@@ -80,10 +121,19 @@ for i in range(len(url_array)):
         sub_status = results[sub_status]
     else:
         sub_status = delister(sub_status)
+        if ord(sub_status[0]) in range(48, 60):
+            sub_status = int(sub_status)
+    if market in prev_dict:
+        if isinstance(sub_status, int):
+            difference = int(prev_dict[market]) - int(sub_status)
     # print results to terminal
     print(f"{market:<20}{sub_status:>10}")
+    if difference != 0:
+        print(f"{(-1 * difference):>30}")
     # writes results to output file
     o.write(f"{market:<20}{sub_status:>10}\n")
+    if difference != 0:
+        o.write(f"{(-1 * difference):>30}\n")
 
 # closes output file
 o.close()

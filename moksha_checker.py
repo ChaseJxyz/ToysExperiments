@@ -83,7 +83,7 @@ for i in range(len(url_array)):
     # print results to terminal
     print(f"{market:<20}{sub_status:>10}")
     # writes results to output file
-    o.write(f"{market[2:-2]:<20}{sub_status[2:-2]:>10}\n")
+    o.write(f"{market:<20}{sub_status:>10}\n")
 
 # closes output file
 o.close()

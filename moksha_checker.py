@@ -1,21 +1,25 @@
 import re
 import urllib.request
 import datetime
+from html import unescape
 
-# separates each instance script ran
-separator = "-" * 30
+# nice formatting for output
+table_width = 35
+separator = "-" * table_width
 
-# opens file with 1 moksha url per line + converts into
-# array
-f = open("moksha_URLS")
-raw_urls = f.read()
-f.close()
-url_array = raw_urls.split()
-
+# opens file with 1 moksha url per line + converts into array
+try:
+    f = open("moksha_URLS")
+    raw_urls = f.read()
+    f.close()
+    url_array = raw_urls.split()
+except FileNotFoundError:
+    print("Please make a URL file! Otherwise this has nothing to do :)")
+    quit()
 
 # regex for finding market name + queue position + sub status
 queue_pattern = r"(?<=QueuePosition<\/th><td>)\d+"
-market_pattern = r"(?<=SubmissionStatus-)\w+"
+market_pattern = r"(?<=SubmissionStatus-)(.*?)\|"
 status_pattern = r"(?<=<th>Status<\/th><td>)\w+"
 
 # silly dict for prettifying results
@@ -50,9 +54,14 @@ def despacer(name):
 
 
 # read all old entries and turn into array
-o = open(file="moksha_output", mode="r")
-previous_entries = o.readlines()
-o.close()
+try:
+    o = open(file="moksha_output", mode="r")
+    previous_entries = o.readlines()
+    o.close()
+except FileNotFoundError:
+    print("No history found")
+    previous_entries = []
+
 
 # finds last instance script ran + saves results into list
 last_checked_index = 0
@@ -81,8 +90,6 @@ for x in range(0, len(last_checked_markets)):
 
 
 # opens/creates output file for results w/timestamp
-# im now realizing all that above code will not work if this doesnt
-# already exist. that is something to fix another day
 o = open(file="moksha_output", mode="a+")
 o.write(f"{datetime.datetime.now()}\n{separator}\n")
 
@@ -110,6 +117,8 @@ for i in range(len(url_array)):
     # find/save/format market name
     market = re.findall(market_pattern, html_str)
     market = delister(market)
+    if "&" in market:
+        market = unescape(market)
     market = despacer(market)
     # looks for queue position
     sub_status = re.findall(queue_pattern, html_str)
@@ -127,13 +136,13 @@ for i in range(len(url_array)):
         if isinstance(sub_status, int):
             difference = int(prev_dict[market]) - int(sub_status)
     # print results to terminal
-    print(f"{market:<20}{sub_status:>10}")
+    print(f"{market:<25}{sub_status:>10}")
     if difference != 0:
-        print(f"{(-1 * difference):>30}")
+        print(f"{(-1 * difference):>35}")
     # writes results to output file
-    o.write(f"{market:<20}{sub_status:>10}\n")
+    o.write(f"{market:<25}{sub_status:>10}\n")
     if difference != 0:
-        o.write(f"{(-1 * difference):>30}\n")
+        o.write(f"{(-1 * difference):>35}\n")
 
 # closes output file
 o.close()

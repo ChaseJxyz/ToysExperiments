@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+# only need that if you want to run this in the shell
+# w/o typing python3 first lol
+
 import re
 import urllib.request
 import datetime
@@ -76,9 +80,12 @@ for element in range(last_checked_index, len(previous_entries)):
     temp = previous_entries[element]
     temp = temp.strip("\n")
     temp = re.split(r'[" "]{2,}', temp)
-    if temp[1][1] in [0 - 9]:
-        temp[1] = int(temp[1])
-    last_checked_markets.append(temp)
+    if temp[0] == "":
+        continue
+    else:
+        if temp[1][1] in [0 - 9]:
+            temp[1] = int(temp[1])
+        last_checked_markets.append(temp)
 
 
 # converts list into dict cause i couldnt get it to work otherwise
@@ -134,7 +141,10 @@ for i in range(len(url_array)):
             sub_status = int(sub_status)
     if market in prev_dict:
         if isinstance(sub_status, int):
-            difference = int(prev_dict[market]) - int(sub_status)
+            try:
+                difference = int(prev_dict[market]) - int(sub_status)
+            except ValueError:
+                difference = 0
     # print results to terminal
     print(f"{market:<25}{sub_status:>10}")
     if difference != 0:

@@ -8,8 +8,9 @@ import datetime
 from html import unescape
 
 # nice formatting for output
-table_width = 35
+table_width = 60
 separator = "-" * table_width
+header = ["Market", "Position", "Days", "Avg. Days"]
 
 # opens file with 1 moksha url per line + converts into array
 try:
@@ -18,24 +19,27 @@ try:
     f.close()
     url_array = raw_urls.split()
 except FileNotFoundError:
-    print("Please make a URL file! Otherwise this has nothing to do :)")
+    print(
+        "Please make a URL file! Otherwise this has nothing to do :)\n1. Open up notepad and paste in your Moksha URLs (one per line)\n2. Save it as `moksha_URLS` (in the same folder as this script)\n3. If your OS forces you to have a file extension, open up *this* file (the .py) in your text editor, ctrl + F `moksha_URLS`and add the extension to the try in this code block (and save the .py, of course!)\n4. Rerun this script, and it should work!"
+    )
     quit()
 
-# regex for finding market name + queue position + sub status
+# regex for finding vars of interest
 queue_pattern = r"(?<=QueuePosition<\/th><td>)\d+"
 market_pattern = r"(?<=SubmissionStatus-)(.*?)\|"
 status_pattern = r"(?<=<th>Status<\/th><td>)\w+"
+days_pattern = r"(?<=DaysUnderReview<\/th><td>)\d+"
+avg_pattern = r"(?<=<th>ResponseTimeAverage<\/th><td>)\d+"
 
-# silly dict for prettifying results
-# feel free to remove the emoji
+# dict for prettifying results
 results = {
     # i only have rejected/accepted urls to test so idk if
     # the others work yet
-    "rejected": "Rejected 😿",
+    "rejected": "Rejected",
     "accepted": "🎉Accepted🎉",
-    "revisionrequested": "Revision Requested 🙀",
-    "withdrawn": "Withdrawn 🐈‍⬛",
-    "inprogress": "In Progress 😺",
+    "revisionrequested": "Revision Requested",
+    "withdrawn": "Withdrawn",
+    "inprogress": "In Progress",
 }
 
 """
@@ -62,54 +66,61 @@ try:
     o = open(file="moksha_output", mode="r")
     previous_entries = o.readlines()
     o.close()
+    history = True
 except FileNotFoundError:
     print("No history found")
     previous_entries = []
+    history = False
 
 
 # finds last instance script ran + saves results into list
 last_checked_index = 0
 last_checked_markets = []
 
-for index, element in reversed(list(enumerate(previous_entries))):
-    if element[0:3] == "---":
-        last_checked_index = index + 1
-        break
+if history:
+    for index, element in reversed(list(enumerate(previous_entries))):
+        if element[0:3] == "---":
+            last_checked_index = index + 3
+            break
 
-for element in range(last_checked_index, len(previous_entries)):
-    temp = previous_entries[element]
-    temp = temp.strip("\n")
-    temp = re.split(r'[" "]{2,}', temp)
-    if temp[0] == "":
-        continue
-    else:
-        if temp[1][1] in [0 - 9]:
-            temp[1] = int(temp[1])
-        last_checked_markets.append(temp)
+    for element in range(last_checked_index, len(previous_entries)):
+        temp = previous_entries[element]
+        temp = temp.strip("\n")
+        temp = re.split(r'[" "]{2,}', temp)
+        if temp[0] == "":
+            continue
+        else:
+            if temp[1][1] in [0 - 9]:
+                temp[1] = int(temp[1])
+            last_checked_markets.append(temp)
 
+    # converts list into dict cause i couldnt get it to work otherwise
+    prev_dict = {}
 
-# converts list into dict cause i couldnt get it to work otherwise
-prev_dict = {}
-
-x = 0
-for x in range(0, len(last_checked_markets)):
-    prev_dict[last_checked_markets[x][0]] = last_checked_markets[x][1]
+    x = 0
+    for x in range(0, len(last_checked_markets)):
+        prev_dict[last_checked_markets[x][0]] = last_checked_markets[x][1]
 
 
 # opens/creates output file for results w/timestamp
 o = open(file="moksha_output", mode="a+")
 o.write(f"{datetime.datetime.now()}\n{separator}\n")
+o.write("%-24s %-14s %-9s %-9s \n" % (header[0], header[1], header[2], header[3]))
+o.write(f"{'.' * table_width}\n")
 
+# prints header for terminal
+print("%-24s %-14s %-9s %-9s" % (header[0], header[1], header[2], header[3]))
+print(f"{'.' * table_width}")
 
 # inits for the core loop
 i = 0
 x = 0
 market = ""
 sub_status = ""
-difference = 0
+pos_difference = 0
 
 for i in range(len(url_array)):
-    difference = 0
+    pos_difference = 0
     x = 0
     # opens/closes URL and saves as string
     fp = urllib.request.urlopen(url_array[i])
@@ -142,17 +153,30 @@ for i in range(len(url_array)):
     if market in prev_dict:
         if isinstance(sub_status, int):
             try:
-                difference = int(prev_dict[market]) - int(sub_status)
+                pos_difference = int(prev_dict[market]) - int(sub_status)
             except ValueError:
-                difference = 0
+                pos_difference = 0
+    # find/save length and avg length
+    length = re.findall(days_pattern, html_str)
+    length = delister(length)
+    avg_length = re.findall(avg_pattern, html_str)
+    avg_length = delister(avg_length)
+    # var for difference from average
+    try:
+        day_diff = -1 * (int(avg_length) - int(length))
+        if day_diff > 0:
+            day_diff = f"+{day_diff}"
+    except ValueError:
+        day_diff = "?"
+
     # print results to terminal
-    print(f"{market:<25}{sub_status:>10}")
-    if difference != 0:
-        print(f"{(-1 * difference):>35}")
+    print(f"{market:<25}{sub_status:<15}{length:<10}{avg_length:<3} ({day_diff})")
+    if pos_difference != 0:
+        print(f"Change: {(pos_difference):>20}")
     # writes results to output file
-    o.write(f"{market:<25}{sub_status:>10}\n")
-    if difference != 0:
-        o.write(f"{(-1 * difference):>35}\n")
+    o.write(f"{market:<25}{sub_status:<15}{length:<10}{avg_length:<10}\n")
+    if pos_difference != 0:
+        o.write(f"Change: {(pos_difference):>20}\n")
 
 # closes output file
 o.close()

@@ -168,11 +168,12 @@ for i in range(len(url_array)):
     # find/save uid
     sub_uid = re.findall(uid_pattern, url_array[i])
     sub_uid = delister((sub_uid))
+    sub_uid = sub_uid + " "
     # find in prev outputs and find position movement
     if market in prev_dict and prev_dict[market][1] == sub_uid:
         if isinstance(sub_status, int):
             try:
-                pos_difference = int(prev_dict[market]) - int(sub_status)
+                pos_difference = int(prev_dict[market][0]) - int(sub_status)
             except ValueError:
                 pos_difference = 0
     # find/save length and avg length
@@ -198,13 +199,14 @@ for i in range(len(url_array)):
         f"{market:<25}{sub_status:<15}{length:<10}{avg_length:<3} {day_diff:<7}{13 * '*'}"
     )
     if pos_difference != 0:
-        print(f"Change: {(pos_difference):>20}")
+        print(f"Change: {(pos_difference):>19}")
     # writes results to output file
     o.write(
         f"{market:<25}{sub_status:<15}{length:<10}{avg_length:<3} {day_diff:<7}{sub_uid:<14}\n"
     )
     if pos_difference != 0:
-        o.write(f"Change: {(pos_difference):>20}\n")
+        o.write(f"Change: {(pos_difference):>19}\n")
 
 # closes output file
+o.write("\n")
 o.close()

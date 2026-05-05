@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# this code prints itself! has this changed!
+# this code prints itself!
 import subprocess
 
 r = subprocess.run(

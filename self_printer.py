@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-# this code prints itself!
+# this code prints itself! has this changed!
 import subprocess
-
-# c =
 
 r = subprocess.run(
     [
